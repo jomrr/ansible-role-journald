@@ -1,0 +1,19 @@
+---
+# name: jomrr.journald
+# file: meta/main.yml
+
+galaxy_info:
+  namespace: jomrr
+  role_name: journald
+  author: Jonas Mauer
+  company: none
+  description: Ansible role to configure systemd-journald.
+  license: MIT
+  issue_tracker_url: https://github.com/jomrr/ansible-role-journald/issues
+  min_ansible_version: "2.15"
+  galaxy_tags:
+    - systemd
+    - journald
+    - journal
+    - logging
+    - logs
