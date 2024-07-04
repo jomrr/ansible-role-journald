@@ -1,0 +1,35 @@
+# role: jomrr.journald
+# file: {{ template_destpath }}
+# {{ ansible_managed }}
+
+[Journal]
+Storage={{ journald_storage }}
+Compress={{ journald_compress }}
+Seal={{ journald_seal }}
+SplitMode={{ journald_split_mode }}
+SyncIntervalSec={{ journald_sync_interval_sec }}
+RateLimitIntervalSec={{ journald_rate_limit_interval_sec }}
+RateLimitBurst={{ journald_rate_limit_burst }}
+{% if journald_system_max_use %}SystemMaxUse={{ journald_system_max_use }}{% endif %}
+{% if journald_system_keep_free %}SystemKeepFree={{ journald_system_keep_free }}{% endif %}
+{% if journald_system_max_file_size %}SystemMaxFileSize={{ journald_system_max_file_size }}{% endif %}
+{% if journald_system_max_files %}SystemMaxFiles={{ journald_system_max_files }}{% endif %}
+{% if journald_runtime_max_use %}RuntimeMaxUse={{ journald_runtime_max_use }}{% endif %}
+{% if journald_runtime_keep_free %}RuntimeKeepFree={{ journald_runtime_keep_free }}{% endif %}
+{% if journald_runtime_max_file_size %}RuntimeMaxFileSize={{ journald_runtime_max_file_size }}{% endif %}
+{% if journald_runtime_max_files %}RuntimeMaxFiles={{ journald_runtime_max_files }}{% endif %}
+{% if journald_max_retention_sec %}MaxRetentionSec={{ journald_max_retention_sec }}{% endif %}
+{% if journald_max_file_sec %}MaxFileSec={{ journald_max_file_sec }}{% endif %}
+ForwardToSyslog={{ journald_forward_to_syslog }}
+ForwardToKMsg={{ journald_forward_to_kmsg }}
+ForwardToConsole={{ journald_forward_to_console }}
+ForwardToWall={{ journald_forward_to_wall }}
+{% if journald_tty_path %}TTYPath={{ journald_tty_path }}{% endif %}
+MaxLevelStore={{ journald_max_level_store }}
+MaxLevelSyslog={{ journald_max_level_syslog }}
+MaxLevelKMsg={{ journald_max_level_kmsg }}
+MaxLevelConsole={{ journald_max_level_console }}
+MaxLevelWall={{ journald_max_level_wall }}
+{% if journald_line_max %}LineMax={{ journald_line_max }}{% endif %}
+ReadKMsg={{ journald_read_kmsg }}
+Audit={{ journald_audit }}

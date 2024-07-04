@@ -1,0 +1,26 @@
+# role: jomrr.journald
+# file: tasks/main.yml
+
+- name: "Role journald | assert systemd"
+  ansible.builtin.assert:
+    that:
+      - "ansible_service_mgr == 'systemd'"
+    fail_msg: "Systemd is not installed"
+    success_msg: "Systemd is installed"
+
+- name: "Role journald | configure journald"
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/{{ item }}"
+    mode: '0644'
+    owner: root
+    group: root
+  loop:
+    - "etc/systemd/journald.conf"
+  notify: "Restart journald"
+
+- name: "Role journald | ensure journald is enabled and running"
+  ansible.builtin.systemd:
+    name: systemd-journald
+    enabled: true
+    state: started

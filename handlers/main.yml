@@ -1,0 +1,11 @@
+# role: jomrr.journald
+# file: handlers/main.yml
+
+- name: "Restart journald"
+  ansible.builtin.systemd:
+    name: systemd-journald
+    state: restarted
+    enabled: true
+    daemon_reload: true
+    masked: false
+    scope: system

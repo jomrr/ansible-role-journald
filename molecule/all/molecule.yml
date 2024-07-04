@@ -1,0 +1,63 @@
+---
+# name: jomrr.ansible-role-journald
+# file: molecule/all/molecule.yml
+
+scenario:
+  name: all
+dependency:
+  name: galaxy
+  requirements-file: meta/requirements.yml
+driver:
+  name: podman
+lint: set -e; ansible-lint
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      interpreter_python: auto_silent
+      callback_whitelist: profile_tasks, timer, yaml
+    ssh_connection:
+      pipelining: true
+  log: true
+  playbooks:
+    converge: ../resources/playbooks/converge.yml
+    verify: ../resources/playbooks/verify.yml
+verifier:
+  name: ansible
+platforms:
+  - name: almalinux-latest-journald
+    image: "docker.io/jomrr/molecule-almalinux:latest"
+    pre_build_image: true
+    entrypoint: null
+    command: null
+    systemd: true
+  - name: archlinux-latest-journald
+    image: "docker.io/jomrr/molecule-archlinux:latest"
+    pre_build_image: true
+    entrypoint: null
+    command: null
+    systemd: true
+  - name: debian-latest-journald
+    image: "docker.io/jomrr/molecule-debian:latest"
+    pre_build_image: true
+    entrypoint: null
+    command: null
+    systemd: true
+  - name: fedora-latest-journald
+    image: "docker.io/jomrr/molecule-fedora:latest"
+    pre_build_image: true
+    entrypoint: null
+    command: null
+    systemd: true
+  - name: opensuse-leap-latest-journald
+    image: "docker.io/jomrr/molecule-opensuse-leap:latest"
+    pre_build_image: true
+    entrypoint: null
+    command: null
+    systemd: true
+  - name: ubuntu-latest-journald
+    image: "docker.io/jomrr/molecule-ubuntu:latest"
+    pre_build_image: true
+    entrypoint: null
+    command: null
+    systemd: true
