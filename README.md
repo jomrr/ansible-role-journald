@@ -26,7 +26,6 @@ This role has no special prerequisites.
 collections:
   - name: community.general
 
-
 roles: []
 ```
 
