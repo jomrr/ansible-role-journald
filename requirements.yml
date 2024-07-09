@@ -1,0 +1,8 @@
+---
+# role: jomrr.journald
+# file: meta/requirements.yml
+
+collections:
+  - {'name': 'community.general'}
+
+roles: []
