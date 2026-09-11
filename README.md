@@ -440,8 +440,6 @@ volatile.
 
 ## Operational Notes
 
-- Idempotent: subsequent runs with unchanged inputs report no changes and do not
-  restart journald.
 - Storage defaults provide a starting point for a VM with 8 GB RAM and an 8 GB
   log volume. Persistent journal usage is limited to 4G with 1G of free-space
   headroom and a maximum journal file size of 128M.
@@ -461,8 +459,8 @@ volatile.
 - Journald has no standalone native validator for a candidate journald.conf.
   Argument specifications validate the public interface; Molecule exercises log
   ingestion, persistent and volatile storage, priority filtering, configuration
-  changes, check mode and idempotency. Journal file verification and systemd
-  unit verification do not validate journald.conf.
+  changes and check mode. Journal file verification and systemd unit
+  verification do not validate journald.conf.
 - Journald uses volatile storage during early boot until
   systemd-journal-flush.service requests persistent storage. Switching to
   volatile storage leaves existing persistent journal files intact.
