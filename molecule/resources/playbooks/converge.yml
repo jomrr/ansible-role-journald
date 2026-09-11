@@ -1,10 +1,9 @@
-# role: jomrr.journald
+---
+# role: journald
 # file: molecule/resources/playbooks/converge.yml
-# code: language=ansible-jinja
 
-- name: "PLAYBOOK | Converge | journald"
+- name: "Molecule | converge | journald"
   hosts: all
-  become: true
   gather_facts: true
   roles:
     - role: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"

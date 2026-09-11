@@ -1,11 +1,19 @@
-# role: jomrr.journald
+---
+# role: journald
 # file: handlers/main.yml
 
-- name: "Restart journald"
-  ansible.builtin.systemd:
-    name: systemd-journald
+- name: JOURNALD | Restart the journal service
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journald.service
     state: restarted
-    enabled: true
-    daemon_reload: true
-    masked: false
-    scope: system
+  listen: restart journald
+
+- name: JOURNALD | Apply the configured persistent storage mode
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journal-flush.service
+    state: restarted
+  listen: restart journald

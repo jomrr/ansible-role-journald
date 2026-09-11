@@ -1,0 +1,40 @@
+---
+# role: journald
+# file: molecule/resources/tasks/verify_journal.yml
+
+- name: JOURNALD | Exercise log ingestion, storage location and priority filtering
+  become: true
+  become_user: root
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - |
+        import subprocess
+        import sys
+        import uuid
+
+        subprocess.run(
+            ["systemctl", "is-active", "--quiet", "systemd-journald.service"],
+            check=True,
+        )
+        tag = "molecule-journald-" + uuid.uuid4().hex
+        for priority in ("debug", "warning"):
+            subprocess.run(
+                ["systemd-cat", "--identifier=" + tag, "--priority=" + priority],
+                input=priority + "\n", text=True, check=True,
+            )
+        subprocess.run(["journalctl", "--sync"], check=True)
+        directory = sys.argv[1]
+        result = subprocess.run(
+            ["journalctl", "--directory=" + directory, "--identifier=" + tag,
+             "--output=cat", "--quiet", "--no-pager"],
+            text=True, stdout=subprocess.PIPE, check=True,
+        )
+        actual = result.stdout.splitlines()
+        expected = sys.argv[2].split()
+        assert sorted(actual) == sorted(expected), (directory, expected, actual)
+        print("Verified journal messages:", directory, actual)
+      - "{{ __journald_expected_directory }}"
+      - "{{ __journald_expected_messages | join(' ') }}"
+  changed_when: true

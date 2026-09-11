@@ -1,12 +1,13 @@
-# role: jomrr.journald
+---
+# role: journald
 # file: molecule/resources/playbooks/verify.yml
-# code: language=ansible-jinja
 
-- name: "PLAYBOOK | Verify | journald"
+- name: JOURNALD | Verify persistent journal storage
   hosts: all
   gather_facts: false
   tasks:
-    - name: "Assert true"
-      ansible.builtin.assert:
-        that: "true"
-        fail_msg: "This should never fail"
+    - name: JOURNALD | Verify persisted messages and default priority handling
+      ansible.builtin.import_tasks: ../tasks/verify_journal.yml
+      vars:
+        __journald_expected_directory: /var/log/journal
+        __journald_expected_messages: [debug, warning]

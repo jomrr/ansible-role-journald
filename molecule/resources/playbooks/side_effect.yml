@@ -1,0 +1,31 @@
+---
+# role: journald
+# file: molecule/resources/playbooks/side_effect.yml
+
+- name: JOURNALD | Exercise configuration changes on an existing service
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: JOURNALD | Change to volatile storage and warning priority
+      ansible.builtin.include_role:
+        name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+      vars:
+        journald_storage: volatile
+        journald_max_level_store: warning
+        journald_system_max_use: ""
+        journald_system_keep_free: ""
+        journald_system_max_file_size: ""
+        journald_system_max_files: ""
+        journald_runtime_max_file_size: ""
+        journald_runtime_max_files: ""
+        journald_max_file_sec: ""
+        journald_line_max: ""
+
+    - name: JOURNALD | Apply the changed configuration before checking behavior
+      ansible.builtin.meta: flush_handlers
+
+    - name: JOURNALD | Verify volatile storage and rejection of debug messages
+      ansible.builtin.import_tasks: ../tasks/verify_journal.yml
+      vars:
+        __journald_expected_directory: /run/log/journal
+        __journald_expected_messages: [warning]

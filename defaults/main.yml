@@ -1,34 +1,93 @@
-# role: jomrr.journald
+---
+# role: journald
 # file: defaults/main.yml
 
-# General options
+# Storage mode for journal data.
 journald_storage: "persistent"
+
+# Journal compression switch or compression threshold in bytes.
 journald_compress: "yes"
+
+# Enable forward secure sealing when sealing keys are available.
 journald_seal: "yes"
+
+# Split persistent journals by user; login is a legacy systemd value.
 journald_split_mode: "uid"
+
+# Maximum interval between journal synchronization operations.
 journald_sync_interval_sec: "5m"
+
+# Per-service rate limiting interval; zero disables rate limiting.
 journald_rate_limit_interval_sec: "30s"
+
+# Per-service message burst before the filesystem-dependent multiplier.
 journald_rate_limit_burst: "1000"
-journald_system_max_use: "10G"
-journald_system_keep_free: "5G"
-journald_system_max_file_size: "1G"
+
+# Maximum persistent journal size; an empty string uses the systemd default.
+journald_system_max_use: "4G"
+
+# Space to leave free on the persistent journal filesystem; empty uses the systemd default.
+journald_system_keep_free: "1G"
+
+# Maximum persistent journal file size; empty uses the systemd default.
+journald_system_max_file_size: "128M"
+
+# Maximum persistent journal file count; empty uses the systemd default.
 journald_system_max_files: "100"
-journald_runtime_max_use: "1G"
-journald_runtime_keep_free: "10%"
-journald_runtime_max_file_size: "200M"
+
+# Maximum volatile journal size; empty uses the systemd default.
+journald_runtime_max_use: "256M"
+
+# Space to leave free on the runtime filesystem; empty uses the systemd default.
+journald_runtime_keep_free: "128M"
+
+# Maximum volatile journal file size; empty uses the systemd default.
+journald_runtime_max_file_size: "32M"
+
+# Maximum volatile journal file count; empty uses the systemd default.
 journald_runtime_max_files: "10"
+
+# Maximum journal retention time; empty leaves the systemd default without a time limit.
 journald_max_retention_sec: ""
+
+# Maximum time before journal file rotation; empty uses the systemd default.
 journald_max_file_sec: "1month"
+
+# Forward journal messages to the local syslog socket.
 journald_forward_to_syslog: "no"
+
+# Forward journal messages to the kernel log buffer.
 journald_forward_to_kmsg: "no"
+
+# Forward journal messages to the configured console.
 journald_forward_to_console: "no"
+
+# Forward journal messages to logged-in users according to the wall priority limit.
 journald_forward_to_wall: "yes"
+
+# Console device for forwarded messages; empty uses the systemd default.
 journald_tty_path: "/dev/console"
+
+# Least severe priority retained in journal storage.
 journald_max_level_store: "debug"
+
+# Least severe priority forwarded to the syslog socket.
 journald_max_level_syslog: "debug"
+
+# Least severe priority forwarded to the kernel log buffer.
 journald_max_level_kmsg: "notice"
+
+# Least severe priority forwarded to the console.
 journald_max_level_console: "info"
+
+# Least severe priority forwarded to logged-in users.
 journald_max_level_wall: "emerg"
+
+# Maximum stream log line size; empty uses the systemd default.
 journald_line_max: "48K"
+
+# Read messages from the kernel log buffer when accessible.
 journald_read_kmsg: "yes"
+
+# Request kernel auditing when the journal service has the required capability.
 journald_audit: "yes"
