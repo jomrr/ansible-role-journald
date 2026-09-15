@@ -1,0 +1,39 @@
+---
+# role: journald
+# file: tasks/upload.yml
+
+- name: JOURNALD | Create the journal upload unit override directory
+  become: true
+  become_user: root
+  ansible.builtin.file:
+    path: /etc/systemd/system/systemd-journal-upload.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: JOURNALD | Configure the journal upload destination
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    src: etc/systemd/journal-upload.conf.j2
+    dest: /etc/systemd/journal-upload.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify: restart journal upload
+
+- name: JOURNALD | Configure journal upload credentials and resumption
+  become: true
+  become_user: root
+  ansible.builtin.template:
+    src: etc/systemd/system/journal-upload.service.conf.j2
+    dest: /etc/systemd/system/systemd-journal-upload.service.d/50-ansible.conf
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  notify:
+    - reload journal transport units
+    - restart journal upload

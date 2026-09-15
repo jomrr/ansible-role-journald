@@ -168,3 +168,101 @@ argument_specs:
         default: 'yes'
         description:
           - Request kernel auditing when the journal service has the required capability.
+      journald_remote_enabled:
+        type: bool
+        default: false
+        description:
+          - Manage the HTTPS journal receiver when enabled; false leaves it unmanaged.
+      journald_remote_listen:
+        type: str
+        default: 0.0.0.0:19532
+        description:
+          - Address and TCP port for the HTTPS journal receiver.
+      journald_remote_directory:
+        type: path
+        default: /var/log/journal/remote
+        description:
+          - Directory containing journals received from remote hosts.
+      journald_remote_split_mode:
+        type: str
+        default: host
+        choices:
+          - host
+          - none
+        description:
+          - Split received journals by connection peer or combine them in one file.
+      journald_remote_max_use:
+        type: str
+        default: 1G
+        description:
+          - Maximum combined disk usage for received journals.
+      journald_remote_keep_free:
+        type: str
+        default: 1G
+        description:
+          - Free disk space reserved by the journal receiver.
+      journald_remote_max_file_size:
+        type: str
+        default: 128M
+        description:
+          - Maximum size of an individual received journal file.
+      journald_remote_max_files:
+        type: str
+        default: '100'
+        description:
+          - Maximum number of received journal files, subject to active-file retention.
+      journald_remote_tls:
+        type: dict
+        description:
+          - PEM files on the managed host; required when the receiver is enabled.
+        options:
+          certificate:
+            type: path
+            required: true
+            description:
+              - Server certificate signed by the CA trusted by uploading clients.
+          key:
+            type: path
+            required: true
+            description:
+              - Private key matching the server certificate.
+          ca:
+            type: path
+            required: true
+            description:
+              - CA bundle used to authenticate uploading clients.
+      journald_upload_enabled:
+        type: bool
+        default: false
+        description:
+          - Manage HTTPS journal uploads when enabled; false leaves them unmanaged.
+      journald_upload_url:
+        type: str
+        description:
+          - HTTPS collector URL; required when uploads are enabled.
+      journald_upload_network_timeout_sec:
+        type: str
+        default: infinity
+        description:
+          - Maximum upload request duration; infinity disables the overall request time
+            limit.
+      journald_upload_tls:
+        type: dict
+        description:
+          - PEM files on the managed host; required when uploads are enabled.
+        options:
+          certificate:
+            type: path
+            required: true
+            description:
+              - Client certificate signed by the CA trusted by the receiver.
+          key:
+            type: path
+            required: true
+            description:
+              - Private key matching the client certificate.
+          ca:
+            type: path
+            required: true
+            description:
+              - CA bundle used to authenticate the receiver.

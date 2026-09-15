@@ -1,0 +1,73 @@
+---
+# role: journald
+# file: molecule/resources/playbooks/verify_transport.yml
+
+- name: JOURNALD | Verify collector authentication and retention
+  hosts: journal_collectors
+  gather_facts: false
+  tasks:
+    - name: JOURNALD | Exercise authenticated reception and rotation
+      become: true
+      become_user: root
+      ansible.builtin.script:
+        cmd: >-
+          ../scripts/verify_transport.py receive
+          {{ __journald_transport_directory | quote }} {{ __journald_transport_port }}
+        executable: python3
+
+- name: JOURNALD | Verify uploads from each source and recovery after an outage
+  hosts: journal_sources
+  gather_facts: false
+  tasks:
+    - name: JOURNALD | Verify delivery before the collector outage
+      ansible.builtin.import_tasks: ../tasks/verify_upload.yml
+      vars:
+        __journald_transport_message: before-outage
+
+    - name: JOURNALD | Stop the collector for the outage test
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: systemd-journal-remote.socket
+        state: stopped
+      delegate_to: "{{ groups.journal_collectors | first }}"
+      run_once: true
+
+    - name: JOURNALD | Emit messages while the collector is unavailable
+      become: true
+      become_user: root
+      ansible.builtin.script:
+        cmd: ../scripts/verify_transport.py emit during-outage
+        executable: python3
+      register: __journald_emitted_tag
+
+    - name: JOURNALD | Restore the collector
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: systemd-journal-remote.socket
+        state: started
+      delegate_to: "{{ groups.journal_collectors | first }}"
+      run_once: true
+
+    - name: JOURNALD | Verify messages retained during the outage arrive
+      become: true
+      become_user: root
+      ansible.builtin.script:
+        cmd: >-
+          ../scripts/verify_transport.py wait {{ __journald_transport_directory | quote }}
+          {{ __journald_emitted_tag.stdout | trim | quote }} {{ inventory_hostname | quote }} during-outage
+        executable: python3
+      delegate_to: "{{ groups.journal_collectors | first }}"
+
+    - name: JOURNALD | Restart uploads to exercise cursor persistence
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: systemd-journal-upload.service
+        state: restarted
+
+    - name: JOURNALD | Verify delivery after restarting uploads
+      ansible.builtin.import_tasks: ../tasks/verify_upload.yml
+      vars:
+        __journald_transport_message: after-upload-restart

@@ -2,92 +2,205 @@
 # role: journald
 # file: defaults/main.yml
 
+# Size values use bytes or binary units such as K, M and G, never percentages.
+# Counts and durations remain quoted strings; component enable flags are YAML booleans.
+
 # Storage mode for journal data.
 journald_storage: "persistent"
+# Choices: "auto", "persistent", "volatile", "none".
 
 # Journal compression switch or compression threshold in bytes.
 journald_compress: "yes"
+# journald_compress: "no"
+# journald_compress: "4K"
 
 # Enable forward secure sealing when sealing keys are available.
 journald_seal: "yes"
+# journald_seal: "no"
 
 # Split persistent journals by user; login is a legacy systemd value.
 journald_split_mode: "uid"
+# Choices: "uid", "none", "login" (legacy).
 
 # Maximum interval between journal synchronization operations.
 journald_sync_interval_sec: "5m"
+# journald_sync_interval_sec: "30s"
+# journald_sync_interval_sec: "2min"
 
 # Per-service rate limiting interval; zero disables rate limiting.
 journald_rate_limit_interval_sec: "30s"
+# journald_rate_limit_interval_sec: "1min"
+# journald_rate_limit_interval_sec: "0"  # Disable rate limiting.
 
 # Per-service message burst before the filesystem-dependent multiplier.
 journald_rate_limit_burst: "1000"
+# journald_rate_limit_burst: "10000"
+# journald_rate_limit_burst: "0"  # Disable rate limiting.
 
 # Maximum persistent journal size; an empty string uses the systemd default.
 journald_system_max_use: "4G"
+# journald_system_max_use: "2G"
+# journald_system_max_use: ""
 
 # Space to leave free on the persistent journal filesystem; empty uses the systemd default.
 journald_system_keep_free: "1G"
+# journald_system_keep_free: "512M"
+# journald_system_keep_free: ""
 
 # Maximum persistent journal file size; empty uses the systemd default.
 journald_system_max_file_size: "128M"
+# journald_system_max_file_size: "64M"
+# journald_system_max_file_size: ""
 
 # Maximum persistent journal file count; empty uses the systemd default.
 journald_system_max_files: "100"
+# journald_system_max_files: "50"
+# journald_system_max_files: ""
 
 # Maximum volatile journal size; empty uses the systemd default.
 journald_runtime_max_use: "256M"
+# journald_runtime_max_use: "128M"
+# journald_runtime_max_use: ""
 
 # Space to leave free on the runtime filesystem; empty uses the systemd default.
 journald_runtime_keep_free: "128M"
+# journald_runtime_keep_free: "64M"
+# journald_runtime_keep_free: ""
 
 # Maximum volatile journal file size; empty uses the systemd default.
 journald_runtime_max_file_size: "32M"
+# journald_runtime_max_file_size: "16M"
+# journald_runtime_max_file_size: ""
 
 # Maximum volatile journal file count; empty uses the systemd default.
 journald_runtime_max_files: "10"
+# journald_runtime_max_files: "20"
+# journald_runtime_max_files: ""
 
 # Maximum journal retention time; empty leaves the systemd default without a time limit.
 journald_max_retention_sec: ""
+# journald_max_retention_sec: "14day"
+# journald_max_retention_sec: "0"  # Disable time-based retention.
 
 # Maximum time before journal file rotation; empty uses the systemd default.
 journald_max_file_sec: "1month"
+# journald_max_file_sec: "1week"
+# journald_max_file_sec: "0"  # Disable time-based rotation.
+# journald_max_file_sec: ""
 
 # Forward journal messages to the local syslog socket.
 journald_forward_to_syslog: "no"
+# journald_forward_to_syslog: "yes"
 
 # Forward journal messages to the kernel log buffer.
 journald_forward_to_kmsg: "no"
+# journald_forward_to_kmsg: "yes"
 
 # Forward journal messages to the configured console.
 journald_forward_to_console: "no"
+# journald_forward_to_console: "yes"
 
 # Forward journal messages to logged-in users according to the wall priority limit.
 journald_forward_to_wall: "yes"
+# journald_forward_to_wall: "no"
 
 # Console device for forwarded messages; empty uses the systemd default.
 journald_tty_path: "/dev/console"
+# journald_tty_path: "/dev/ttyS0"
+# journald_tty_path: ""
 
 # Least severe priority retained in journal storage.
 journald_max_level_store: "debug"
+# Choices for all journald_max_level_* options, from most to least severe:
+# "emerg", "alert", "crit", "err", "warning", "notice", "info", "debug",
+# or the corresponding numeric strings "0" through "7".
+# journald_max_level_store: "warning"
 
 # Least severe priority forwarded to the syslog socket.
 journald_max_level_syslog: "debug"
+# journald_max_level_syslog: "info"
 
 # Least severe priority forwarded to the kernel log buffer.
 journald_max_level_kmsg: "notice"
+# journald_max_level_kmsg: "err"
 
 # Least severe priority forwarded to the console.
 journald_max_level_console: "info"
+# journald_max_level_console: "4"  # warning
 
 # Least severe priority forwarded to logged-in users.
 journald_max_level_wall: "emerg"
+# journald_max_level_wall: "alert"
 
 # Maximum stream log line size; empty uses the systemd default.
 journald_line_max: "48K"
+# journald_line_max: "64K"
+# journald_line_max: ""
 
 # Read messages from the kernel log buffer when accessible.
 journald_read_kmsg: "yes"
+# journald_read_kmsg: "no"
 
 # Request kernel auditing when the journal service has the required capability.
 journald_audit: "yes"
+# journald_audit: "no"
+
+# Manage the HTTPS journal receiver when enabled; false leaves it unmanaged.
+journald_remote_enabled: false
+# Choices: true, false (YAML booleans).
+
+# Address and TCP port for the HTTPS journal receiver.
+journald_remote_listen: "0.0.0.0:19532"
+# journald_remote_listen: "192.0.2.10:19532"
+# journald_remote_listen: "[::]:19532"
+
+# Directory containing journals received from remote hosts.
+journald_remote_directory: "/var/log/journal/remote"
+# journald_remote_directory: "/srv/journal/remote"
+
+# Split received journals by connection peer or combine them in one file.
+journald_remote_split_mode: "host"
+# Choices: "host", "none".
+
+# Maximum combined disk usage for received journals.
+journald_remote_max_use: "1G"
+# journald_remote_max_use: "2G"
+
+# Free disk space reserved by the journal receiver.
+journald_remote_keep_free: "1G"
+# journald_remote_keep_free: "512M"
+
+# Maximum size of an individual received journal file.
+journald_remote_max_file_size: "128M"
+# journald_remote_max_file_size: "64M"
+
+# Maximum number of received journal files, subject to active-file retention.
+journald_remote_max_files: "100"
+# journald_remote_max_files: "50"
+
+# PEM files on the managed host; required when the receiver is enabled.
+# journald_remote_tls:
+#   certificate: /etc/pki/journal/collector.crt
+#   key: /etc/pki/journal/collector.key
+#   ca: /etc/pki/journal/ca.crt
+
+# Manage HTTPS journal uploads when enabled; false leaves them unmanaged.
+journald_upload_enabled: false
+# Choices: true, false (YAML booleans).
+
+# HTTPS collector URL; required when uploads are enabled.
+# journald_upload_url: "https://logs.example.org:19532"
+
+# Maximum upload request duration; infinity disables the overall request time limit.
+journald_upload_network_timeout_sec: "infinity"
+# Format: "infinity" or a duration; bare numbers denote seconds.
+# Finite values limit the entire upload request.
+# journald_upload_network_timeout_sec: "60s"
+# journald_upload_network_timeout_sec: "2min"
+# journald_upload_network_timeout_sec: "1h 30min"
+
+# PEM files on the managed host; required when uploads are enabled.
+# journald_upload_tls:
+#   certificate: /etc/pki/journal/client.crt
+#   key: /etc/pki/journal/client.key
+#   ca: /etc/pki/journal/ca.crt

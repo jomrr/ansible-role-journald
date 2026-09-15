@@ -1,0 +1,7 @@
+---
+# role: journald
+# file: vars/Debian.yml
+
+__journald_transport_packages:
+  - systemd-journal-remote
+__journald_transport_binary_directory: /usr/lib/systemd

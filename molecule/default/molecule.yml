@@ -27,6 +27,27 @@ provisioner:
     verify: "../resources/playbooks/verify.yml"
     prepare: "../resources/playbooks/prepare.yml"
     side_effect: "../resources/playbooks/side_effect.yml"
+  inventory:
+    group_vars:
+      all:
+        journald_remote_listen: "0.0.0.0:19533"
+        journald_remote_directory: "/var/log/journal/moleculevolume/remote"
+        journald_remote_max_use: "32M"
+        journald_remote_keep_free: "64M"
+        journald_remote_max_file_size: "8M"
+        journald_remote_tls:
+          certificate: "/etc/journald-molecule/server.crt"
+          key: "/etc/journald-molecule/server.key"
+          ca: "/etc/journald-molecule/ca.crt"
+        journald_upload_url: "https://journal-collector:19533"
+        journald_upload_tls:
+          certificate: "/etc/journald-molecule/client.crt"
+          key: "/etc/journald-molecule/client.key"
+          ca: "/etc/journald-molecule/ca.crt"
+      journal_collectors:
+        journald_remote_enabled: true
+      journal_sources:
+        journald_upload_enabled: true
 verifier:
   name: "ansible"
 scenario:
@@ -53,3 +74,22 @@ platforms:
     pre_build_image: true
     override_command: false
     systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_sources"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"
+  - name: "journal-collector"
+    image: "docker.io/jomrr/molecule-fedora:latest"
+    pre_build_image: true
+    override_command: false
+    systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_collectors"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"

@@ -2,6 +2,15 @@
 # role: journald
 # file: tasks/main.yml
 
+- name: JOURNALD | Require TLS credentials for enabled journal transport
+  ansible.builtin.assert:
+    that:
+      - not journald_remote_enabled or journald_remote_tls is defined
+      - not journald_upload_enabled or journald_upload_tls is defined
+      - not journald_upload_enabled or (journald_upload_url is defined and journald_upload_url is match('^https://'))
+    fail_msg: Enabled journal transport requires TLS certificate, key and CA paths, and uploads require an HTTPS URL.
+    quiet: true
+
 - name: JOURNALD | Configure journal storage and forwarding
   become: true
   become_user: root
@@ -21,3 +30,7 @@
     name: systemd-journald.service
     enabled: true
     state: started
+
+- name: JOURNALD | Configure optional journal transport
+  ansible.builtin.import_tasks: transport.yml
+  when: journald_remote_enabled or journald_upload_enabled

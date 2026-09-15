@@ -1,0 +1,22 @@
+---
+# role: journald
+# file: molecule/resources/tasks/verify_upload.yml
+
+- name: JOURNALD | Emit a uniquely tagged source message
+  become: true
+  become_user: root
+  ansible.builtin.script:
+    cmd: ../scripts/verify_transport.py emit {{ __journald_transport_message | quote }}
+    executable: python3
+  register: __journald_emitted_tag
+
+- name: JOURNALD | Verify source message delivery and original hostname
+  become: true
+  become_user: root
+  ansible.builtin.script:
+    cmd: >-
+      ../scripts/verify_transport.py wait {{ __journald_transport_directory | quote }}
+      {{ __journald_emitted_tag.stdout | trim | quote }} {{ inventory_hostname | quote }}
+      {{ __journald_transport_message | quote }}
+    executable: python3
+  delegate_to: "{{ groups.journal_collectors | first }}"

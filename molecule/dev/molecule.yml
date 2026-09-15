@@ -16,9 +16,12 @@ provisioner:
       forks: 8
       interpreter_python: "auto_silent"
       allow_world_readable_tmpfiles: true
-      callbacks_enabled: "ansible.posix.profile_tasks,ansible.posix.timer"
+      callbacks_enabled: "ansible.builtin.default"
       callback_result_format: "yaml"
       remote_tmp: "/tmp/.ansible/tmp"
+      display_ok_hosts: false
+      display_skipped_hosts: false
+      show_task_path_on_failure: true
     ssh_connection:
       pipelining: true
   log: true
@@ -27,6 +30,27 @@ provisioner:
     verify: "../resources/playbooks/verify.yml"
     prepare: "../resources/playbooks/prepare.yml"
     side_effect: "../resources/playbooks/side_effect.yml"
+  inventory:
+    group_vars:
+      all:
+        journald_remote_listen: "0.0.0.0:19533"
+        journald_remote_directory: "/var/log/journal/moleculevolume/remote"
+        journald_remote_max_use: "32M"
+        journald_remote_keep_free: "64M"
+        journald_remote_max_file_size: "8M"
+        journald_remote_tls:
+          certificate: "/etc/journald-molecule/server.crt"
+          key: "/etc/journald-molecule/server.key"
+          ca: "/etc/journald-molecule/ca.crt"
+        journald_upload_url: "https://journal-collector:19533"
+        journald_upload_tls:
+          certificate: "/etc/journald-molecule/client.crt"
+          key: "/etc/journald-molecule/client.key"
+          ca: "/etc/journald-molecule/ca.crt"
+      journal_collectors:
+        journald_remote_enabled: true
+      journal_sources:
+        journald_upload_enabled: true
 verifier:
   name: "ansible"
 scenario:
@@ -53,28 +77,82 @@ platforms:
     pre_build_image: true
     override_command: false
     systemd: "true"
-  - name: "archlinux-latest-journald"
-    image: "docker.io/jomrr/molecule-archlinux:latest"
-    pre_build_image: true
-    override_command: false
-    systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_sources"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"
   - name: "debian-latest-journald"
     image: "docker.io/jomrr/molecule-debian:latest"
     pre_build_image: true
     override_command: false
     systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_sources"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"
   - name: "fedora-latest-journald"
     image: "docker.io/jomrr/molecule-fedora:latest"
     pre_build_image: true
     override_command: false
     systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_sources"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"
   - name: "opensuse-leap-latest-journald"
     image: "docker.io/jomrr/molecule-opensuse-leap:latest"
     pre_build_image: true
     override_command: false
     systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_sources"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"
+  - name: "opensuse-tumbleweed-latest-journald"
+    image: "docker.io/jomrr/molecule-opensuse-tumbleweed:latest"
+    pre_build_image: true
+    override_command: false
+    systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_sources"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"
   - name: "ubuntu-latest-journald"
     image: "docker.io/jomrr/molecule-ubuntu:latest"
     pre_build_image: true
     override_command: false
     systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_sources"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"
+  - name: "journal-collector"
+    image: "docker.io/jomrr/molecule-fedora:latest"
+    pre_build_image: true
+    override_command: false
+    systemd: "true"
+    network: "journald-${MOLECULE_SCENARIO_NAME}"
+    groups:
+      - "journal_collectors"
+    capabilities:
+      - "SYS_ADMIN"
+    security_opts:
+      - "label=disable"

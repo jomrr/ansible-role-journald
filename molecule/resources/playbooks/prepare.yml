@@ -2,10 +2,137 @@
 # role: journald
 # file: molecule/resources/playbooks/prepare.yml
 
-- name: JOURNALD | Wait for test containers
+- name: JOURNALD | Prepare journal transport test prerequisites
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: JOURNALD | Allow credential mounts to propagate between container services
+      become: true
+      become_user: root
+      ansible.builtin.command:
+        argv:
+          - mount
+          - --make-rshared
+          - /run
+      changed_when: true
+
+    - name: JOURNALD | Exercise local-only configuration before enabling transport
+      ansible.builtin.include_role:
+        name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+      vars:
+        journald_remote_enabled: false
+        journald_upload_enabled: false
+
+    - name: JOURNALD | Load platform package prerequisites for initial check mode
+      ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', __journald_platform_files) }}"
+      vars:
+        __journald_platform_files:
+          files:
+            - "{{ ansible_facts.os_family }}.yml"
+          paths:
+            - "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}/vars"
+
+    - name: JOURNALD | Install transport prerequisites for initial check mode
+      become: true
+      become_user: root
+      ansible.builtin.package:
+        name: "{{ __journald_transport_packages }}"
+        state: present
+        update_cache: true
+
+- name: JOURNALD | Create the shared test PKI
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: JOURNALD | Issue disposable test certificates
+      ansible.builtin.script:
+        cmd: >-
+          ../scripts/prepare_pki.py
+          {{ (lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') ~ '/pki') | quote }}
+        executable: python3
+
+- name: JOURNALD | Provision test certificates
   hosts: all
   gather_facts: false
   tasks:
-    - name: JOURNALD | Wait for Ansible connectivity
-      ansible.builtin.wait_for_connection:
-        timeout: 60
+    - name: JOURNALD | Create the private test PKI directory
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: /etc/journald-molecule
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: JOURNALD | Install test certificates
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        src: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/pki/{{ __journald_certificate }}"
+        dest: "/etc/journald-molecule/{{ __journald_certificate }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop: [ca.crt, server.crt, client.crt]
+      loop_control:
+        loop_var: __journald_certificate
+
+    - name: JOURNALD | Install private test keys
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        src: "{{ lookup('ansible.builtin.env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/pki/{{ __journald_key }}"
+        dest: "/etc/journald-molecule/{{ __journald_key }}"
+        owner: root
+        group: root
+        mode: '0600'
+      loop: [server.key, client.key]
+      loop_control:
+        loop_var: __journald_key
+      no_log: true
+
+- name: JOURNALD | Prepare a persistent collector test volume
+  hosts: journal_collectors
+  gather_facts: false
+  tasks:
+    - name: JOURNALD | Create the bind source and mount point
+      become: true
+      become_user: root
+      ansible.builtin.file:
+        path: "{{ __journald_volume_directory }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /var/lib/journald-molecule-volume
+        - /var/log/journal/moleculevolume
+      loop_control:
+        loop_var: __journald_volume_directory
+
+    - name: JOURNALD | Define a collector mount without automatic boot activation
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/var-log-journal-moleculevolume.mount
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Persistent journal test volume
+
+          [Mount]
+          What=/var/lib/journald-molecule-volume
+          Where=/var/log/journal/moleculevolume
+          Type=none
+          Options=bind
+
+    - name: JOURNALD | Mount the prepared volume before the first role configuration
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: var-log-journal-moleculevolume.mount
+        daemon_reload: true
+        state: started

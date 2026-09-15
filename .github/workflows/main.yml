@@ -89,10 +89,6 @@ jobs:
             uns: jomrr
             img: almalinux
             tag: latest
-          - name: journald-archlinux-latest
-            uns: jomrr
-            img: archlinux
-            tag: latest
           - name: journald-debian-latest
             uns: jomrr
             img: debian
@@ -104,6 +100,10 @@ jobs:
           - name: journald-opensuse-leap-latest
             uns: jomrr
             img: opensuse-leap
+            tag: latest
+          - name: journald-opensuse-tumbleweed-latest
+            uns: jomrr
+            img: opensuse-tumbleweed
             tag: latest
           - name: journald-ubuntu-latest
             uns: jomrr

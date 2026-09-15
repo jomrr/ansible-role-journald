@@ -1,0 +1,21 @@
+# Managed by ansible.
+# file: {{ template_destpath }}
+
+[Unit]
+RequiresMountsFor={{ journald_remote_directory | to_json(ensure_ascii=False) }}
+
+[Service]
+LoadCredential=journal.key:{{ journald_remote_tls.key }}
+LoadCredential=journal.crt:{{ journald_remote_tls.certificate }}
+LoadCredential=ca.crt:{{ journald_remote_tls.ca }}
+ExecStart=
+ExecStart={{ __journald_transport_binary_directory }}/systemd-journal-remote \
+    --listen-https=-3 \
+{% if journald_remote_split_mode == 'none' %}
+    --output={{ (journald_remote_directory ~ '/remote.journal') | quote }} \
+{% else %}
+    --output={{ journald_remote_directory | quote }} \
+{% endif %}
+    --key=%d/journal.key --cert=%d/journal.crt --trust=%d/ca.crt
+LogsDirectory=
+ReadWritePaths={{ journald_remote_directory | quote }}

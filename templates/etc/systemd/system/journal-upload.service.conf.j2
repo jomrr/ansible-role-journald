@@ -1,0 +1,12 @@
+# Managed by ansible.
+# file: {{ template_destpath }}
+
+[Service]
+LoadCredential=journal.key:{{ journald_upload_tls.key }}
+LoadCredential=journal.crt:{{ journald_upload_tls.certificate }}
+LoadCredential=ca.crt:{{ journald_upload_tls.ca }}
+ExecStart=
+ExecStart={{ __journald_transport_binary_directory }}/systemd-journal-upload \
+    --save-state --key=%d/journal.key --cert=%d/journal.crt --trust=%d/ca.crt
+Restart=on-failure
+RestartSec=5s

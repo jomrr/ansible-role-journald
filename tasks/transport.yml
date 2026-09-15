@@ -1,0 +1,56 @@
+---
+# role: journald
+# file: tasks/transport.yml
+
+- name: JOURNALD | Load journal transport platform settings
+  ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', __journald_platform_files) }}"
+  vars:
+    __journald_platform_files:
+      files:
+        - "{{ ansible_facts.os_family }}.yml"
+      paths:
+        - "{{ role_path }}/vars"
+
+- name: JOURNALD | Install journal transport packages
+  become: true
+  become_user: root
+  ansible.builtin.package:
+    name: "{{ __journald_transport_packages }}"
+    state: present
+
+- name: JOURNALD | Configure the journal receiver
+  ansible.builtin.import_tasks: remote.yml
+  when: journald_remote_enabled
+
+- name: JOURNALD | Configure journal uploads
+  ansible.builtin.import_tasks: upload.yml
+  when: journald_upload_enabled
+
+- name: JOURNALD | Apply journal transport units before starting services
+  ansible.builtin.meta: flush_handlers
+
+- name: JOURNALD | Enable and start the journal receiver socket
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journal-remote.socket
+    enabled: true
+    state: started
+  when: journald_remote_enabled
+
+- name: JOURNALD | Start the journal receiver
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journal-remote.service
+    state: started
+  when: journald_remote_enabled
+
+- name: JOURNALD | Enable and start journal uploads
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journal-upload.service
+    enabled: true
+    state: started
+  when: journald_upload_enabled

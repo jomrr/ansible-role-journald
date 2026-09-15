@@ -17,3 +17,42 @@
     name: systemd-journal-flush.service
     state: restarted
   listen: restart journald
+
+- name: JOURNALD | Reload journal transport units
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  listen: reload journal transport units
+
+- name: JOURNALD | Stop the receiver before replacing its listening socket
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journal-remote.service
+    state: stopped
+  listen: restart journal receiver socket
+
+- name: JOURNALD | Restart the journal receiver socket
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journal-remote.socket
+    state: restarted
+  listen: restart journal receiver socket
+
+- name: JOURNALD | Restart the journal receiver
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journal-remote.service
+    state: restarted
+  listen: restart journal receiver
+
+- name: JOURNALD | Restart journal uploads
+  become: true
+  become_user: root
+  ansible.builtin.systemd_service:
+    name: systemd-journal-upload.service
+    state: restarted
+  listen: restart journal upload

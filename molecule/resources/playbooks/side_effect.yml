@@ -2,24 +2,165 @@
 # role: journald
 # file: molecule/resources/playbooks/side_effect.yml
 
+- name: JOURNALD | Exercise a short receiver pause without restarting uploads
+  hosts: journal_sources
+  gather_facts: false
+  tasks:
+    - name: JOURNALD | Record the running upload instance before pausing reception
+      ansible.builtin.script:
+        cmd: ../scripts/verify_transport.py upload-state
+        executable: python3
+      register: __journald_upload_before
+      changed_when: false
+
+    - name: JOURNALD | Pause reception and ensure it is resumed even on test failure
+      block:
+        - name: JOURNALD | Suspend the receiver process while keeping its socket open
+          become: true
+          become_user: root
+          ansible.builtin.command:
+            argv:
+              - systemctl
+              - kill
+              - --signal=SIGSTOP
+              - --kill-whom=main
+              - systemd-journal-remote.service
+          changed_when: true
+          delegate_to: "{{ groups.journal_collectors | first }}"
+          run_once: true
+
+        - name: JOURNALD | Emit source messages during the reception pause
+          become: true
+          become_user: root
+          ansible.builtin.script:
+            cmd: ../scripts/verify_transport.py emit during-pause
+            executable: python3
+          register: __journald_emitted_tag
+
+        - name: JOURNALD | Keep reception paused for ten seconds
+          ansible.builtin.pause:
+            seconds: 10
+
+      always:
+        - name: JOURNALD | Resume the receiver process
+          become: true
+          become_user: root
+          ansible.builtin.command:
+            argv:
+              - systemctl
+              - kill
+              - --signal=SIGCONT
+              - --kill-whom=main
+              - systemd-journal-remote.service
+          changed_when: true
+          delegate_to: "{{ groups.journal_collectors | first }}"
+          run_once: true
+
+    - name: JOURNALD | Verify every source message arrives after resuming reception
+      become: true
+      become_user: root
+      ansible.builtin.script:
+        cmd: >-
+          ../scripts/verify_transport.py wait {{ journald_remote_directory | quote }}
+          {{ __journald_emitted_tag.stdout | trim | quote }} {{ inventory_hostname | quote }} during-pause
+        executable: python3
+      delegate_to: "{{ groups.journal_collectors | first }}"
+
+    - name: JOURNALD | Read the upload instance after delivery
+      ansible.builtin.script:
+        cmd: ../scripts/verify_transport.py upload-state
+        executable: python3
+      register: __journald_upload_after
+      changed_when: false
+
+    - name: JOURNALD | Verify uploads survived the pause without a restart
+      ansible.builtin.assert:
+        that:
+          - __journald_upload_before.stdout | trim == __journald_upload_after.stdout | trim
+        fail_msg: The upload service restarted during the receiver pause or subsequent delivery.
+
+- name: JOURNALD | Exercise receiver startup with its log filesystem unmounted
+  hosts: journal_collectors
+  gather_facts: false
+  tasks:
+    - name: JOURNALD | Stop socket activation and the receiver before unmounting
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: "{{ __journald_receiver_unit }}"
+        state: stopped
+      loop:
+        - systemd-journal-remote.socket
+        - systemd-journal-remote.service
+      loop_control:
+        loop_var: __journald_receiver_unit
+
+    - name: JOURNALD | Unmount the persistent test volume
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: var-log-journal-moleculevolume.mount
+        state: stopped
+
+    - name: JOURNALD | Verify the log filesystem is actually unmounted
+      ansible.builtin.command:
+        argv: [findmnt, --mountpoint, /var/log/journal/moleculevolume]
+      register: __journald_unmounted_volume
+      changed_when: false
+      failed_when: __journald_unmounted_volume.rc != 1
+
+    - name: JOURNALD | Start the receiver and let it request its own mount dependencies
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: systemd-journal-remote.service
+        state: started
+
+    - name: JOURNALD | Verify receiver startup mounted the log filesystem
+      ansible.builtin.command:
+        argv: [findmnt, --mountpoint, /var/log/journal/moleculevolume]
+      changed_when: false
+
+- name: JOURNALD | Verify delivery into the persistent volume after remounting
+  hosts: journal_sources
+  gather_facts: false
+  tasks:
+    - name: JOURNALD | Verify source messages are stored in the bind mount source
+      ansible.builtin.import_tasks: ../tasks/verify_upload.yml
+      vars:
+        __journald_transport_directory: /var/lib/journald-molecule-volume/remote
+        __journald_transport_message: after-remount
+
 - name: JOURNALD | Exercise configuration changes on an existing service
   hosts: all
   gather_facts: true
+  vars:
+    journald_storage: volatile
+    journald_max_level_store: warning
+    journald_system_max_use: ""
+    journald_system_keep_free: ""
+    journald_system_max_file_size: ""
+    journald_system_max_files: ""
+    journald_runtime_max_file_size: ""
+    journald_runtime_max_files: ""
+    journald_max_file_sec: ""
+    journald_line_max: ""
+    journald_remote_listen: '0.0.0.0:19534'
+    journald_remote_directory: /var/log/journal/moleculevolume/changed
+    journald_remote_split_mode: none
+    journald_upload_url: 'https://journal-collector:19534'
   tasks:
-    - name: JOURNALD | Change to volatile storage and warning priority
+    - name: JOURNALD | Change local storage and receiver configuration independently
       ansible.builtin.include_role:
         name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
       vars:
-        journald_storage: volatile
-        journald_max_level_store: warning
-        journald_system_max_use: ""
-        journald_system_keep_free: ""
-        journald_system_max_file_size: ""
-        journald_system_max_files: ""
-        journald_runtime_max_file_size: ""
-        journald_runtime_max_files: ""
-        journald_max_file_sec: ""
-        journald_line_max: ""
+        journald_upload_enabled: false
+
+    - name: JOURNALD | Change the upload destination independently
+      ansible.builtin.include_role:
+        name: "{{ lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+      vars:
+        journald_remote_enabled: false
 
     - name: JOURNALD | Apply the changed configuration before checking behavior
       ansible.builtin.meta: flush_handlers
@@ -29,3 +170,9 @@
       vars:
         __journald_expected_directory: /run/log/journal
         __journald_expected_messages: [warning]
+
+- name: JOURNALD | Verify transport after changing the listener and storage
+  ansible.builtin.import_playbook: verify_transport.yml
+  vars:
+    __journald_transport_directory: /var/log/journal/moleculevolume/changed
+    __journald_transport_port: 19534
